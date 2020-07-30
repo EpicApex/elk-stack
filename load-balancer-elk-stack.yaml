@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: load-balancer-log-creator
+spec:
+  selector:
+    app: log-creator
+  type: LoadBalancer
+  #Under the hood -> ports is declared to route traffic to component selected by the 'selector'
+  #Describing all of the related ports to be mapped on the target Object(pod selector)
+  ports:
+    - name: busy-box
+      port: 2000
+      targetPort: 2000
+      protocol: TCP
+  # Service (TargetPort = containerPort) Deployment
+  # port - internal communication port for other pods on the node. (To have the ability to access the app from another pod)
+  # targetPort - In relation with EXPOSE(Docker)=targetPort - (specific app) that we want to send traffic to 
+  # nodePort - Number or name of the port to access on the pods targeted by the service. - Agent (chrome) port - to have the ability access the app via URL
+
+  #externalIPs:
+  # - 210.1.1.1
+  # - 210.1.1.2
+  # - 210.1.1.3
+
+

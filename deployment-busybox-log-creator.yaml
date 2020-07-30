@@ -1,0 +1,61 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: log-creator
+  labels:
+    app: log-creator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: log-creator
+  template:
+    metadata:
+      labels:
+        app: log-creator
+    spec:
+      hostNetwork: true
+      volumes:
+        - name: log-creator
+          hostPath:
+            path: /var/log/
+      containers:
+      - name: busybox-log-creator
+        image: busybox
+        lifecycle:
+          preStop:
+            exec:
+              #delete log file pre container stop
+              command:
+              - /bin/sh
+              - -c
+              - |-
+                rm /var/log/log-creator.log
+                touch /var/log/log-creator.log
+        ports:
+        - containerPort: 2000
+        command:
+        - /bin/sh
+        - -c
+        - |-
+          chmod 776 /var/log/log-creator.log
+          echo Application up -> writing TS records each 5 seconds to /var/log/log-creator.log
+          while true; do echo $(date +%F_%T) >> /var/log/log-creator.log && sleep 5; done
+          sleep infinity
+        volumeMounts:
+        - mountPath: /var/log/
+          name: log-creator
+      initContainers:
+      - name: init-load-balancer-log-creator
+        image: busybox:1.28.4
+        # nslookp works only in v1.28.4<= || https://stackoverflow.com/questions/59553941/nslookup-can-not-get-service-ip-on-latest-busybox
+        # stdout echo waiting for service (LB)
+        command: 
+        - /bin/sh
+        - -c
+        - |-
+          until nslookup load-balancer-log-creator.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for load-balancer-log-creator; sleep 2; done
+          
+          
+        
+      
