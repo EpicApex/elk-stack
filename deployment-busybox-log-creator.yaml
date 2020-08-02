@@ -14,24 +14,16 @@ spec:
       labels:
         app: log-creator
     spec:
+      # ClusterFirstWithHostNet - https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/
       hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       volumes:
         - name: log-creator
           hostPath:
             path: /var/log/
       containers:
       - name: busybox-log-creator
-        image: busybox
-        lifecycle:
-          preStop:
-            exec:
-              #delete log file pre container stop
-              command:
-              - /bin/sh
-              - -c
-              - |-
-                rm /var/log/log-creator.log
-                touch /var/log/log-creator.log
+        image: busybox:1.28
         ports:
         - containerPort: 2000
         command:
@@ -45,16 +37,30 @@ spec:
         volumeMounts:
         - mountPath: /var/log/
           name: log-creator
+        lifecycle:
+          preStop:
+            exec:
+              #delete log file pre container stop
+              command:
+              - /bin/sh
+              - -c
+              - |-
+                rm /var/log/log-creator.log
+                touch /var/log/log-creator.log
       initContainers:
       - name: init-load-balancer-log-creator
-        image: busybox:1.28.4
-        # nslookp works only in v1.28.4<= || https://stackoverflow.com/questions/59553941/nslookup-can-not-get-service-ip-on-latest-busybox
-        # stdout echo waiting for service (LB)
+        image: busybox:1.28
+        ######
+        # DNS in k8s and kubelet's behaviour
+        # Description of action - DNS and communication with k8s API server -  kubelet sets each new pod’s /etc/resolv.conf nameserver option to the cluster IP of the kube-dns(coreDNS) service, with appropriate search options to allow for shorter hostnames to be used while calling the API.
+        #
+        # MO - nslookp works only in v1.28<= || https://stackoverflow.com/questions/59553941/nslookup-can-not-get-service-ip-on-latest-busybox
         command: 
         - /bin/sh
         - -c
         - |-
           until nslookup load-balancer-log-creator.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for load-balancer-log-creator; sleep 2; done
+
           
           
         
