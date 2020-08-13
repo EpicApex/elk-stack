@@ -1,0 +1,8 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: local-storage
+  namespace: elk-ns
+provisioner: kubernetes.io/no-provisioner
+#https://kubernetes.io/docs/concepts/storage/storage-classes/#volume-binding-mode
+volumeBindingMode: WaitForFirstConsumer

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolume
+  # PersistentVolumes for the Elasticsearch pods - to maintain stateful applications
+metadata:
+  name: elk-pv-storage-00
+  namespace: elk-ns
+  labels:
+    app: elasticsearch
+    type: local
+spec:
+  storageClassName: local-storage
+  hostPath:
+    path: /usr/share/elasticsearch/data
+  accessModes: [ "ReadWriteOnce" ]
+  capacity:
+    storage: 10Gi
