@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-config
+data:
+  logstash.conf: |-
+      input {
+        beats {
+            port => "9600"
+        }
+      }
+  
+      output {
+        elasticsearch {
+            hosts => "elasticsearch:9200"
+            # This option is set to false by default - AVOID staying up to date with the template provided by Logstash - potential code break
+            template_overwrite => false
+            # a template is applied to Elasticsearch during Logstash’s startup if one with the name template_name does not already exist. By default, the contents of this template is the default template for logstash-%{+YYYY.MM.dd} which always matches indices based on the pattern logstash-*
+            manage_template => false
+            # The events will be stored in elasticsearch under previously defined index_prefix value.  
+            index => "%{[@metadata][index_prefix]}"
+            # Sniffing asks Elasticsearch for the list of all cluster nodes and adds them to the hosts list.
+            sniffing => false
+        }
+      }
