@@ -1,6 +1,7 @@
 kind: Service
 apiVersion: v1
 metadata:
+  #metadata (Here) describes the deployment itself. It gives a label for that actual deployment
   name: elasticsearch-master
   namespace: elk-ns
   labels:
@@ -22,16 +23,20 @@ kind: StatefulSet
 metadata:
   name: elastic-search
   namespace: elk-ns
+  labels:
+    app: elasticsearch
 spec:
   serviceName: elasticsearch # provides association with elasticsearch service.
   replicas: 1
   selector:
+    #matchLabel: tells what pods the deployment will apply to.
     matchLabels:
       app: elasticsearch
   template:
     metadata:
       labels:
         app: elasticsearch
+      namespace: elk-ns
     spec:
       #securityContext for pods - uid 1000
       securityContext:
@@ -57,7 +62,7 @@ spec:
         volumeMounts:
         - name: data
           #Use Architecture-independent data - read only shared data amongst different architecture intenionally using the same OS and same version (maintain balance)
-          mountPath: /usr/share/elasticsearch/data
+          mountPath: /Users/Shared/log/elasticsearch/data
         env:
           - name: cluster.name
             value: log-collector-elastic-search
@@ -77,6 +82,15 @@ spec:
           # Xmx - X maximum size
           - name: ES_JAVA_OPTS
             value: "-Xms512m -Xmx512m"
+          - name: xpack.monitoring.enabled
+            value: "true"
+          - name: xpack.monitoring.collection.enabled 
+            value: "true"
+          # (Open jira ticket under Elastic-Search - expose elastic to local host network for elastic - http://codingfundas.com/setting-up-elasticsearch-6-8-with-kibana-and-x-pack-security-enabled/index.html
+          - name: network.host
+            value: 0.0.0.0
+          - name: xpack.security.enabled
+            value: "false"
         #securityContext for containers - uid
         securityContext:
           capabilities:
@@ -93,19 +107,21 @@ spec:
           - /bin/sh
           - -c 
           - |-
-            chown -R 1000:1000 /usr/share/elasticsearch/data
+            chown -R 1000:1000 /Users/Shared/log/elasticsearch/data
+            chmod 777 /Users/Shared/log/elasticsearch/data
         securityContext:
           privileged: true
         volumeMounts:
         - name: data
-          mountPath: /usr/share/elasticsearch/data
+          mountPath: /Users/Shared/log/elasticsearch/data
       # Increase virtual memory to maximum, in-order to prevent OOM errors for elastic search instance.
       - name: increase-vm-max-map
         image: busybox
         command: ["sysctl", "-w", "vm.max_map_count=262144"]
         securityContext:
           privileged: true
-      # Increase the max number of open file descriptors. 
+      # Increase the max number of open file descriptors
+      # Increase the limits on the number of files (file descriptors) a single process can have open at a time
       - name: increase-fd-ulimit
         image: busybox
         command: ["sh", "-c", "ulimit -n 65536"]
@@ -120,7 +136,11 @@ spec:
         app: elasticsearch
     spec:
       accessModes: [ "ReadWriteOnce" ]
+      volumeMode: Filesystem
       storageClassName: local-storage
       resources:
         requests:
           storage: 10Gi
+      selector:
+        matchLabels:
+          app: elasticsearch

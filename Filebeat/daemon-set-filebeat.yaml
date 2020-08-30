@@ -2,9 +2,11 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: filebeat
+  namespace: elk-ns
   labels:
     k8s-app: filebeat
-spec:  
+    kubernetes.io/cluster-service: "true"
+spec:
   selector:
     matchLabels:
       k8s-app: filebeat
@@ -12,6 +14,7 @@ spec:
     metadata:
       labels:
         k8s-app: filebeat
+        kubernetes.io/cluster-service: "true"
     spec:
       # Refers to our previously defined ServiceAccount.
       serviceAccountName: filebeat
@@ -20,7 +23,7 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
       - name: filebeat
-        image: docker.elastic.co/beats/filebeat:7.5.0
+        image: docker.elastic.co/beats/filebeat:7.8.1
         args: [
           "-c", "/etc/filebeat.yaml",
           "-e",
@@ -30,6 +33,14 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
+        - name: ELASTICSEARCH_HOST
+          value: elasticsearch
+        - name: ELASTICSEARCH_PORT
+          value: "9200"
+        - name: ELASTICSEARCH_USERNAME
+          value: elastic
+        - name: ELASTICSEARCH_PASSWORD
+          value: elastic
         securityContext:
           runAsUser: 0
           # If using Red Hat OpenShift uncomment this:
@@ -47,7 +58,7 @@ spec:
           readOnly: true
           subPath: filebeat.yaml
         - name: data
-          mountPath: /usr/share/filebeat/data
+          mountPath: /Users/Shared/log/filebeat/data
         - name: varlibdockercontainers
           mountPath: /var/lib/docker/containers
           readOnly: true

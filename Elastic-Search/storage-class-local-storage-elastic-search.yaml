@@ -5,4 +5,5 @@ metadata:
   namespace: elk-ns
 provisioner: kubernetes.io/no-provisioner
 #https://kubernetes.io/docs/concepts/storage/storage-classes/#volume-binding-mode
+# why do we need this?
 volumeBindingMode: WaitForFirstConsumer

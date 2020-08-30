@@ -4,6 +4,7 @@ metadata:
   name: coredns
   namespace: kube-system
 data:
+  # insted of kibana -> prometheus
   Corefile: |
     .:53 {
         errors
@@ -16,7 +17,7 @@ data:
             fallthrough in-addr.arpa ip6.arpa
             ttl 30
         }
-        prometheus :9153
+        kibana :9200 
         forward . /etc/resolv.conf
         cache 30
         loop

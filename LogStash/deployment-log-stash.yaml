@@ -5,6 +5,7 @@ metadata:
   name: logstash
   labels:
     app: logstash
+  namespace: elk-ns
 spec:
   selector:
     matchLabels:
@@ -13,6 +14,7 @@ spec:
     metadata:
       labels:
         app: logstash
+      namespace: elk-ns
     spec:
       hostname: logstash
       containers:
@@ -23,9 +25,14 @@ spec:
         image: docker.elastic.co/logstash/logstash:7.8.1
         volumeMounts:
         - name: logstash-config
-          mountPath: /usr/share/logstash/pipeline/
+          mountPath: /Users/Shared/log/logstash/pipeline/
         command:
         - logstash
+        env:
+          - name: xpack.monitoring.elasticsearch.url
+            value: http://localhost:9200
+          - name: xpack.monitoring.elasticsearch.hosts
+            value: http://localhost:9200
       volumes:
       # Previously defined ConfigMap object.
       - name: logstash-config

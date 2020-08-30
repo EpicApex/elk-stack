@@ -5,6 +5,7 @@ metadata:
   name: kibana
   labels:
     k8s-app: kibana
+  namespace: elk-ns
 spec:
   selector:
     matchLabels:
@@ -13,6 +14,7 @@ spec:
     metadata:
       labels:
         k8s-app: kibana
+      namespace: elk-ns
     spec:
       containers:
       - name: kibana
@@ -28,7 +30,7 @@ spec:
           - name: XPACK_SECURITY_ENABLED
             value: 'false'
           - name: VERIFICATION_MODE
-            value: 'certificate'
+            value: 'none'
         ports:
         - containerPort: 5601
           name: ui

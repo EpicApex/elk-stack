@@ -4,6 +4,7 @@ metadata:
   name: log-creator
   labels:
     app: log-creator
+  namespace: elk-ns
 spec:
   replicas: 1
   selector:
@@ -11,8 +12,10 @@ spec:
       app: log-creator
   template:
     metadata:
+      name: log-creator
       labels:
         app: log-creator
+      namespace: elk-ns
     spec:
       # ClusterFirstWithHostNet - https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/
       hostNetwork: true
@@ -20,7 +23,7 @@ spec:
       volumes:
         - name: log-creator
           hostPath:
-            path: /var/log/
+            path: /Users/Shared/log/
       containers:
       - name: busybox-log-creator
         image: busybox:1.28
@@ -30,36 +33,36 @@ spec:
         - /bin/sh
         - -c
         - |-
-          chmod 776 /var/log/log-creator.log
-          echo Application up -> writing TS records each 5 seconds to /var/log/log-creator.log
-          while true; do echo $(date +%F_%T) >> /var/log/log-creator.log && sleep 5; done
-          sleep infinity
+          touch /Users/Shared/log/log-creator.log
+          chmod 776 /Users/Shared/log/log-creator.log
+          echo Application up -> writing TS records each 5 seconds to /Users/Shared/log/log-creator.log
+          while true; do echo $(date +%F_%T) >> /Users/Shared/log/log-creator.log && sleep 5; done
         volumeMounts:
-        - mountPath: /var/log/
+        - mountPath: /Users/Shared/log/
           name: log-creator
         lifecycle:
           preStop:
             exec:
-              #delete log file pre container stop
+              #save host diskspace - delete log file pre container stop
               command:
               - /bin/sh
               - -c
               - |-
-                rm /var/log/log-creator.log
-                touch /var/log/log-creator.log
+                rm /Users/Shared/log/log-creator.log
+                touch /Users/Shared/log/log-creator.log
       initContainers:
-      - name: init-load-balancer-log-creator
+      - name: init-node-port-log-creator
         image: busybox:1.28
         ######
         # DNS in k8s and kubelet's behaviour
         # Description of action - DNS and communication with k8s API server -  kubelet sets each new pod’s /etc/resolv.conf nameserver option to the cluster IP of the kube-dns(coreDNS) service, with appropriate search options to allow for shorter hostnames to be used while calling the API.
-        #
-        # MO - nslookp works only in v1.28<= || https://stackoverflow.com/questions/59553941/nslookup-can-not-get-service-ip-on-latest-busybox
+        # 
+        # MO - usage of namespace(withsecret) and nslookp - works only in v1.28<= || https://stackoverflow.com/questions/59553941/nslookup-can-not-get-service-ip-on-latest-busybox
         command: 
         - /bin/sh
         - -c
         - |-
-          until nslookup load-balancer-log-creator.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for load-balancer-log-creator; sleep 2; done
+          until nslookup node-port-log-creator.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for node-port-log-creator; sleep 2; done
 
           
           
